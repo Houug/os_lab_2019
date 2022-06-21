@@ -11,7 +11,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <pthread.h>
-#include <sys/time.h>
 #include "factorial.h"
 
 struct FactorialArgs {
@@ -31,8 +30,7 @@ uint64_t Factorial(const struct FactorialArgs *args) {
 
 void *ThreadFactorial(void *args) {
     struct FactorialArgs *fargs = (struct FactorialArgs *)args;
-	uint64_t result = Factorial(fargs);
-    return (void *)(uint64_t *) result;
+    return (void *)(uint64_t *) Factorial(fargs);
 }
 
 int main(int argc, char **argv) {
@@ -57,11 +55,17 @@ int main(int argc, char **argv) {
                 switch (option_index) {
                     case 0:
                         port = atoi(optarg);
-                        // TODO: your code here
+                        if (port < 1 || port > 63535) {
+							printf("Incorrect port value");
+							return 1;
+						}							
                         break;
                     case 1:
                         tnum = atoi(optarg);
-                        // TODO: your code here
+                        if (tnum <= 0) {
+							printf("Value must be greater zero");
+							return 1;
+						}
                         break;
                     default:
                         printf("Index %d is out of options\n", option_index);
@@ -145,16 +149,14 @@ int main(int argc, char **argv) {
 
             fprintf(stdout, "Receive: %lu %lu %lu\n", begin, end, mod);
 
-            struct timeval start_time;
-            gettimeofday(&start_time, NULL);
-
             struct FactorialArgs args[tnum];
             for (uint32_t i = 0; i < tnum; i++) {
-                args[i].begin = i*(end/tnum) + begin;
-                args[i].end = (i == tnum - 1) ? end :(i+1)*(end/tnum);
+                args[i].begin = i * ((end - begin) / tnum) + begin ;
+				if (i != 0) args[i].begin++;
+                args[i].end = (i == tnum-1) ? end : (i + 1) * ((end - begin) / tnum) + begin;
                 args[i].mod = mod;
 
-                if (pthread_create(&threads[i], NULL, ThreadFactorial,
+                if (pthread_create(&(threads[i]), NULL, ThreadFactorial,
                                    (void *)&args[i])) {
                     printf("Error: pthread_create failed!\n");
                     return 1;
@@ -166,16 +168,9 @@ int main(int argc, char **argv) {
                 uint64_t result;
                 pthread_join(threads[i], (void **)&result);
                 total = MultModulo(total, result, mod);
-				
             }
 
-            struct timeval finish_time;
-            gettimeofday(&finish_time, NULL);
-
-            double elapsed_time = (finish_time.tv_sec - start_time.tv_sec) * 1000.0;
-            elapsed_time += (finish_time.tv_usec - start_time.tv_usec) / 1000.0;
-
-            printf("Total: %lu\nTime: %fms\n", total, elapsed_time);
+            printf("Total: %lu\n", total);
 
             char buffer[sizeof(total)];
             memcpy(buffer, &total, sizeof(total));

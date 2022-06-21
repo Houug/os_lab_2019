@@ -130,7 +130,10 @@ int main(int argc, char **argv) {
 						}
                         break;
                     case 2:
-                        // TODO: your code here
+                        if (strlen(optarg) > 254) {
+							printf("Path is to long\n");
+							return 1;
+						}
                         memcpy(servers, optarg, strlen(optarg));
                         break;
                     default:
@@ -182,7 +185,6 @@ int main(int argc, char **argv) {
     pthread_t server_threads[servers_num];
     struct ServerArgs server_args[servers_num];
 
-    // TODO: work continiously, rewrite to make parallel
     for (int i = 0; i < servers_num; i++) {
         server_args[i].server = &to[i];
         server_args[i].begin = i*(k/servers_num) + 1;
