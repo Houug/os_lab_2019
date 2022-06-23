@@ -9,15 +9,16 @@
 #include <getopt.h>
 #include <stdbool.h>
 
+
 #define BUFSIZE 100
 #define SADDR struct sockaddr
-#define SIZE sizeof(struct sockaddr_in)
+#define SIZE sizeof(struct sockaddr_in6)
 
 int main(int argc, char *argv[]) {
     int fd;
     int nread;
     char buf[BUFSIZE];
-    struct sockaddr_in servaddr;
+    struct sockaddr_in6 servaddr;
 
     char ip[255];
     int port = -1;
@@ -62,25 +63,25 @@ int main(int argc, char *argv[]) {
         }
     }
     if (port == -1 || strlen(ip) == 0) {
-        fprintf(stderr, "Using: %s --ip <ip address> --port 7777\n", argv[0]);
+        fprintf(stderr, "Using: %s --ip <ipv6 address> --port 7777\n", argv[0]);
         return 1;
     }
 
 
-    if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((fd = socket(AF_INET6, SOCK_STREAM, 0)) < 0) {
         perror("socket creating");
         exit(1);
     }
 
     memset(&servaddr, 0, SIZE);
-    servaddr.sin_family = AF_INET;
+    servaddr.sin6_family = AF_INET6;
 
-    if (inet_pton(AF_INET, ip, &servaddr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET6, ip, &servaddr.sin6_addr) <= 0) {
         perror("bad address");
         exit(1);
     }
 
-    servaddr.sin_port = htons(port);
+    servaddr.sin6_port = htons(port);
 
     if (connect(fd, (SADDR *)&servaddr, SIZE) < 0) {
         perror("connect");
